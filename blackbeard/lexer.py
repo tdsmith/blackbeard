@@ -1,0 +1,222 @@
+from __future__ import unicode_literals
+
+from rpython.rlib.runicode import unicode_encode_utf_8  # noqa
+
+from rply import Token
+from rply.token import SourcePosition
+from typing import Any, Iterator  # noqa
+
+
+class LexerError(Exception):
+    def __init__(self, pos, msg=None):
+        # type: (int, unicode) -> None
+        self.pos = pos
+        self.msg = "" if msg is None else msg
+
+tokens = [
+    "END_OF_INPUT", "ERROR",
+    "unicode_CONST", "NUM_CONST", "NULL_CONST", "SYMBOL", "FUNCTION",
+    "INCOMPLETE_unicodeING",
+    "LEFT_ASSIGN", "EQ_ASSIGN", "RIGHT_ASSIGN", "LBB",
+    "FOR", "IN", "IF", "ELSE", "WHILE", "NEXT", "BREAK", "REPEAT",
+    "GT", "GE", "LT", "LE", "EQ", "NE", "AND", "OR", "AND2", "OR2",
+    "NS_GET", "NS_GET_INT",
+    "COMMENT", "LINE_DIRECTIVE",
+    "SYMBOL_FORMALS",
+    "EQ_FORMALS",
+    "EQ_SUB", "SYMBOL_SUB",
+    "SYMBOL_FUNCTION_CALL",
+    "SYMBOL_PACKAGE",
+    "COLON_ASSIGN",
+    "SLOT",
+
+    "NEWLINE", "SEMICOLON",
+    "PERCENT",
+    "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
+    "MUL", "POW",
+    "NOT"
+]
+
+
+class Lexer(object):
+    EOF = chr(0)
+
+    def __init__(self, source, initial_lineno, symtable):
+        # type: (unicode, int, Dict[Any, Any]) -> None
+        self.source = source
+        self.lineno = initial_lineno
+        self.symtable = symtable
+        self.current_value = []  # type: List[unicode]
+        self.idx = 0
+        self.columno = 1
+        self.state = 0
+        self.paren_nest = 0
+        self.left_paren_begin = 0
+        self.command_start = True
+        # self.condition_state = StackState()
+        # self.cmd_argument_state = StackState()
+        self.unicode_term = None
+
+    def peek(self):
+        # type: () -> unicode
+        ch = self.read()
+        self.unread()
+        return ch
+
+    def add(self, ch):
+        # type: (unicode) -> None
+        self.current_value.append(ch)
+
+    def clear(self):
+        # type: () -> None
+        del self.current_value[:]
+
+    def current_pos(self):
+        # type: () -> SourcePosition
+        return SourcePosition(self.idx, self.lineno, self.columno)
+
+    def newline(self, ch):
+        # type: (unicode) -> None
+        if ch == "\r" and self.peek() == "\n":
+            self.read()
+        self.lineno += 1
+        self.columno = 1
+
+    def emit(self, token):
+        # type: (unicode) -> Token
+        assert token in tokens
+        value = "".join(self.current_value)
+        self.clear()
+        return Token(token, value, self.current_pos())
+
+    def error(self, msg=None):
+        # type: (unicode) -> None
+        raise LexerError(self.current_pos(), msg)
+
+    def read(self):
+        # type: () -> unicode
+        try:
+            ch = self.source[self.idx]
+        except IndexError:
+            ch = self.EOF
+        self.idx += 1
+        self.columno += 1
+        return ch
+
+    def unread(self):
+        # type: () -> None
+        idx = self.idx - 1
+        assert idx >= 0
+        self.idx = idx
+        self.columno -= 1
+
+    def tokenize(self):
+        # type: () -> Iterator[Token]
+        while True:
+            ch = self.read()
+            if ch == self.EOF:
+                break
+            if ch in " \t":
+                continue
+            elif ch == "#":
+                for token in self.comment(ch):
+                    yield token
+            elif ch in "\r\n":
+                self.newline(ch)
+                if self.state != 0:
+                    self.add("\n")
+                    yield self.emit("NEWLINE")
+            elif ch == "*":
+                for token in self.star(ch):
+                    yield token
+            elif ch == "!":
+                for token in self.exclamation(ch):
+                    yield token
+            elif ch == "=":
+                for token in self.equal(ch):
+                    yield token
+            elif ch == "<":
+                for token in self.less_than(ch):
+                    yield token
+            elif ch == ">":
+                for token in self.greater_than(ch):
+                    yield token
+            else:
+                for token in self.symbol(ch):
+                    yield token
+
+    def comment(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        while True:
+            self.add(ch)
+            ch = self.read()
+            if ch == self.EOF or ch in "\r\n":
+                self.unread()
+                yield self.emit("COMMENT")
+                break
+
+    def symbol(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        while True:
+            ch = self.read()
+            if ch == self.EOF:
+                yield self.emit("SYMBOL")
+                self.unread()
+                break
+            elif ch.isalnum() or ch == "_" or ord(ch) > 127:
+                self.add(ch)
+            else:
+                self.unread()
+                yield self.emit("SYMBOL")
+                break
+
+    def star(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "*":
+            yield self.emit("POW")
+        else:
+            self.unread()
+            yield self.emit("MUL")
+
+    def exclamation(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "=":
+            self.add(ch2)
+            yield self.emit("NE")
+        else:
+            self.unread()
+            yield self.emit("NOT")
+
+    def equal(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "=":
+            self.add(ch2)
+            yield self.emit("EQ")
+        else:
+            self.unread()
+            yield self.emit("EQ_ASSIGN")
+
+    def less_than(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "=":
+            self.add(ch2)
+            yield self.emit("LE")
+        elif ch2 == "-":
+            self.add(ch2)
+            yield self.emit("LEFT_ASSIGN")
+        else:
+            self.unread()
+            yield self.emit("LT")
+
+    def greater_than(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        pass
