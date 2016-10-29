@@ -1,0 +1,3 @@
+[run]
+omit = blackbeard/tests/*
+source = blackbeard
