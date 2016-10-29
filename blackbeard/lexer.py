@@ -15,8 +15,8 @@ class LexerError(Exception):
 
 tokens = [
     "END_OF_INPUT", "ERROR",
-    "unicode_CONST", "NUM_CONST", "NULL_CONST", "SYMBOL", "FUNCTION",
-    "INCOMPLETE_unicodeING",
+    "STR_CONST", "NUM_CONST", "NULL_CONST", "SYMBOL", "FUNCTION",
+    "INCOMPLETE_STR",
     "LEFT_ASSIGN", "EQ_ASSIGN", "RIGHT_ASSIGN", "LBB",
     "FOR", "IN", "IF", "ELSE", "WHILE", "NEXT", "BREAK", "REPEAT",
     "GT", "GE", "LT", "LE", "EQ", "NE", "AND", "OR", "AND2", "OR2",
