@@ -152,6 +152,12 @@ class Lexer(object):
             elif ch == "?":
                 for token in self.question_mark(ch):
                     yield token
+            elif ch == "&":
+                for token in self.ampersand(ch):
+                    yield token
+            elif ch == "|":
+                for token in self.pipe(ch):
+                    yield token
             elif ch == "+":
                 for token in self.plus(ch):
                     yield token
@@ -282,6 +288,34 @@ class Lexer(object):
             yield self.emit("QUESTION")
         else:
             yield self.emit("UQUESTION")
+
+    def ampersand(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected &")
+        self.state = self.EXPR_BEG
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "&":
+            self.add(ch2)
+            yield self.emit("AND2")
+        else:
+            self.unread()
+            yield self.emit("AND")
+
+    def pipe(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected |")
+        self.state = self.EXPR_BEG
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "|":
+            self.add(ch2)
+            yield self.emit("OR2")
+        else:
+            self.unread()
+            yield self.emit("OR")
 
     def plus(self, ch):
         # type: (unicode) -> Iterator[Token]

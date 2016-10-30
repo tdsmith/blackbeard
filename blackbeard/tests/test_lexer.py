@@ -109,6 +109,30 @@ class TestLexer(object):
             self.do("?b"),
             ["UQUESTION", "SYMBOL"])
 
+    def test_ampersand(self):
+        assert self.has_tokens(
+            self.do("a&b"),
+            ["SYMBOL", "AND", "SYMBOL"])
+        assert self.has_tokens(
+            self.do("a&&b"),
+            ["SYMBOL", "AND2", "SYMBOL"])
+        with raises(LexerError):
+            self.do("&a")
+        with raises(LexerError):
+            self.do("a & & b")
+
+    def test_pipe(self):
+        assert self.has_tokens(
+            self.do("a|b"),
+            ["SYMBOL", "OR", "SYMBOL"])
+        assert self.has_tokens(
+            self.do("a||b"),
+            ["SYMBOL", "OR2", "SYMBOL"])
+        with raises(LexerError):
+            self.do("|a")
+        with raises(LexerError):
+            self.do("a | | b")
+
     def test_plus(self):
         assert self.has_tokens(
             self.do("a + b"),
