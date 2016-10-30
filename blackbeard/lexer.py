@@ -578,10 +578,15 @@ class Lexer(object):
                 self.add(ch)
 
 
-if __name__ == "__main__":
+def main():
+    # type: () -> None
+    "NOT_RPYTHON"
     import pprint
     import sys
     buf = open(sys.argv[1]).read().decode("utf-8")
     lexer = Lexer(buf, 1, {})
     tokens = list(lexer.tokenize())
     pprint.pprint(tokens)
+
+if __name__ == "__main__":
+    main()
