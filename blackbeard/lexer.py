@@ -30,10 +30,10 @@ tokens = [
     "COLON_ASSIGN",
     "SLOT",
 
-    "NEWLINE", "SEMICOLON", "ELLIPSIS", "COMMA",
-    "PERCENT", "TILDE",
+    "NEWLINE", "SEMICOLON", "ELLIPSIS", "COMMA", "DOLLAR",
+    "INFIX", "TILDE",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
-    "MUL", "POW", "DIV", "PLUS", "UPLUS", "MINUS", "UMINUS",
+    "MUL", "POW", "DIV", "MOD", "PLUS", "UPLUS", "MINUS", "UMINUS",
     "COLON", "UQUESTION", "QUESTION",
     "NOT",
 ]
@@ -213,6 +213,22 @@ class Lexer(object):
                 yield self.emit("TILDE")
             elif ch == ".":
                 for token in self.dot(ch):
+                    yield token
+            elif ch == "\\":
+                ch2 = self.read()
+                if ch2 in "\r\n":
+                    self.newline(ch2)
+                    continue
+                raise NotImplementedError
+            elif ch == "%":
+                for token in self.percent(ch):
+                    yield token
+            elif ch == "$":
+                self.add(ch)
+                self.state = self.EXPR_BEG
+                yield self.emit("DOLLAR")
+            elif ch == "`":
+                for token in self.backtick(ch):
                     yield token
             else:
                 for token in self.symbol(ch):
@@ -523,3 +539,41 @@ class Lexer(object):
             self.error("Unexpected ..")
         self.add("...")
         yield self.emit("ELLIPSIS")
+
+    def percent(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected %")
+        self.state = self.EXPR_BEG
+        self.add(ch)
+        ch2 = self.read()
+        self.add(ch2)
+        if ch2 == "%":
+            yield self.emit("MOD")
+        else:
+            while True:
+                ch = self.read()
+                if ch == self.EOF:
+                    self.error("EOF in infix operator")
+                self.add(ch)
+                if ch == "%":
+                    yield self.emit("INFIX")
+                    break
+
+    def backtick(self, ch_begin):
+        # type: (unicode) -> Iterator[Token]
+        self.state = self.EXPR_ARG
+        while True:
+            ch = self.read()
+            if ch == self.EOF:
+                self.error("EOF in quoted literal")
+            elif ch == ch_begin:
+                yield self.emit("SYMBOL")
+                break
+            elif ch == "\\":
+                ch2 = self.peek()
+                if ch2 == ch_begin:
+                    ch = self.read()
+                self.add(ch)
+            else:
+                self.add(ch)

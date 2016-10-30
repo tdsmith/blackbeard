@@ -240,6 +240,23 @@ class TestLexer(object):
             self.do("a ~ b"),
             ["SYMBOL", "TILDE", "SYMBOL"])
 
+    def test_percent(self):
+        assert self.has_tokens(
+            self.do("a %% b"),
+            ["SYMBOL", "MOD", "SYMBOL"])
+        assert self.has_tokens(
+            self.do("a %in% b"),
+            ["SYMBOL", "INFIX", "SYMBOL"])
+
+    def test_dollar(self):
+        assert self.has_tokens(
+            self.do("a$b"),
+            ["SYMBOL", "DOLLAR", "SYMBOL"])
+
+    def test_backtick(self):
+        assert self.has_tokens(
+            self.do("`Hi Mom`"), ["SYMBOL"])
+
     def test_parser_state_binops(self):
         assert self.has_tokens(
             self.do("3 + b"),
