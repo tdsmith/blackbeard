@@ -183,6 +183,12 @@ class TestLexer(object):
             ["SYMBOL", "EQ_ASSIGN", "FUNCTION",
              "LPAREN", "SYMBOL", "RPAREN",
              "LBRACE", "SYMBOL", "PLUS", "NUM_CONST", "RBRACE"])
+        assert self.has_tokens(
+            self.do("foo = function(...) { bar(...) }"),
+            ["SYMBOL", "EQ_ASSIGN", "FUNCTION",
+             "LPAREN", "ELLIPSIS", "RPAREN",
+             "LBRACE", "SYMBOL", "LPAREN", "ELLIPSIS", "RPAREN",
+             "RBRACE"])
 
     def test_brackets(self):
         assert self.has_tokens(
@@ -211,6 +217,28 @@ class TestLexer(object):
             self.do("/3")
         with raises(LexerError):
             self.do("4 * / 5")
+
+    def test_carat(self):
+        assert self.has_tokens(
+            self.do("a^b"),
+            ["SYMBOL", "POW", "SYMBOL"])
+        with raises(LexerError):
+            self.do("^5")
+
+    def test_semicolon(self):
+        assert self.has_tokens(
+            self.do("a; b"),
+            ["SYMBOL", "SEMICOLON", "SYMBOL"])
+
+    def test_comma(self):
+        assert self.has_tokens(
+            self.do("a, b"),
+            ["SYMBOL", "COMMA", "SYMBOL"])
+
+    def test_tilde(self):
+        assert self.has_tokens(
+            self.do("a ~ b"),
+            ["SYMBOL", "TILDE", "SYMBOL"])
 
     def test_parser_state_binops(self):
         assert self.has_tokens(

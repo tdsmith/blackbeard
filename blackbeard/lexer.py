@@ -30,8 +30,8 @@ tokens = [
     "COLON_ASSIGN",
     "SLOT",
 
-    "NEWLINE", "SEMICOLON",
-    "PERCENT",
+    "NEWLINE", "SEMICOLON", "ELLIPSIS", "COMMA",
+    "PERCENT", "TILDE",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
     "MUL", "POW", "DIV", "PLUS", "UPLUS", "MINUS", "UMINUS",
     "COLON", "UQUESTION", "QUESTION",
@@ -195,6 +195,24 @@ class Lexer(object):
                     yield token
             elif ch == "/":
                 for token in self.slash(ch):
+                    yield token
+            elif ch == "^":
+                for token in self.caret(ch):
+                    yield token
+            elif ch == ";":
+                self.add(ch)
+                self.state = self.EXPR_BEG
+                yield self.emit("SEMICOLON")
+            elif ch == ",":
+                self.add(ch)
+                self.state = self.EXPR_BEG
+                yield self.emit("COMMA")
+            elif ch == "~":
+                self.add(ch)
+                self.state = self.EXPR_BEG
+                yield self.emit("TILDE")
+            elif ch == ".":
+                for token in self.dot(ch):
                     yield token
             else:
                 for token in self.symbol(ch):
@@ -485,3 +503,23 @@ class Lexer(object):
         self.state = self.EXPR_BEG
         self.add(ch)
         yield self.emit("DIV")
+
+    def caret(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected ^")
+        self.state = self.EXPR_BEG
+        self.add(ch)
+        yield self.emit("POW")
+
+    def dot(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.state = self.EXPR_BEG
+        ch2 = self.read()
+        if ch2 != ".":
+            self.error("Unexpected .")
+        ch3 = self.read()
+        if ch3 != ".":
+            self.error("Unexpected ..")
+        self.add("...")
+        yield self.emit("ELLIPSIS")
