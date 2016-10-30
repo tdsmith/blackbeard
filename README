@@ -1,1 +1,7 @@
+Blackbeard would like to become an RPython implementation of R.
+
+Right now it's just a lexer.
+
+(It's named Blackbeard because he was a fearsome pyrate. Arrrrrr.)
+
 lexer.py contains code from the Topaz project; see TOPAZ_LICENSE.
