@@ -187,7 +187,9 @@ class Lexer(object):
                 yield self.emit("SYMBOL")
                 self.unread()
                 break
-            elif ch.isalnum() or ch == "_" or ord(ch) > 127:
+            elif (ch.isalnum() or
+                  ch in "._" or
+                  ord(ch) > 127):
                 self.add(ch)
             else:
                 self.unread()

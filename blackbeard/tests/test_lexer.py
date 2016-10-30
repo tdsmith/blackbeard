@@ -38,6 +38,10 @@ class TestLexer(object):
             Token("SYMBOL", "foo"),
             Token("SYMBOL", "bar")
         ]
+        assert (
+            self.do("this.is.a.symbol") ==
+            [Token("SYMBOL", "this.is.a.symbol")]
+        )
 
     def test_star(self):
         assert self.has_tokens(
