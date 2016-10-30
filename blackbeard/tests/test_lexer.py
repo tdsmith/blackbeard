@@ -101,6 +101,14 @@ class TestLexer(object):
         with raises(LexerError):
             self.do("'EOF in string")
 
+    def test_question(self):
+        assert self.has_tokens(
+            self.do("a ? b"),
+            ["SYMBOL", "QUESTION", "SYMBOL"])
+        assert self.has_tokens(
+            self.do("?b"),
+            ["UQUESTION", "SYMBOL"])
+
     def test_plus(self):
         assert self.has_tokens(
             self.do("a + b"),

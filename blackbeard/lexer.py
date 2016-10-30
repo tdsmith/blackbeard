@@ -34,6 +34,7 @@ tokens = [
     "PERCENT",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
     "MUL", "POW", "PLUS", "UPLUS", "MINUS", "UMINUS",
+    "UQUESTION", "QUESTION",
     "NOT",
 ]
 
@@ -147,6 +148,9 @@ class Lexer(object):
                     yield token
             elif ch in ("'", '"'):
                 for token in self.string_quote(ch):
+                    yield token
+            elif ch == "?":
+                for token in self.question_mark(ch):
                     yield token
             elif ch == "+":
                 for token in self.plus(ch):
@@ -269,6 +273,15 @@ class Lexer(object):
                 self.add(ch)
             else:
                 self.add(ch)
+
+    def question_mark(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        if self.state == self.EXPR_ARG:
+            self.state = self.EXPR_BEG
+            yield self.emit("QUESTION")
+        else:
+            yield self.emit("UQUESTION")
 
     def plus(self, ch):
         # type: (unicode) -> Iterator[Token]
