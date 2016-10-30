@@ -167,6 +167,12 @@ class Lexer(object):
             elif ch.isdigit():
                 for token in self.number(ch):
                     yield token
+            elif ch == "(":
+                for token in self.left_paren(ch):
+                    yield token
+            elif ch == ")":
+                for token in self.right_paren(ch):
+                    yield token
             else:
                 for token in self.symbol(ch):
                     yield token
@@ -385,3 +391,15 @@ class Lexer(object):
                     self.unread()
                 yield self.emit("NUM_CONST")
                 break
+
+    def left_paren(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        self.state = self.EXPR_BEG
+        yield self.emit("LPAREN")
+
+    def right_paren(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        self.state = self.EXPR_ARG
+        yield self.emit("RPAREN")

@@ -166,6 +166,12 @@ class TestLexer(object):
         with raises(LexerError):
             self.do("1.23.4")
 
+    def test_parens(self):
+        assert self.has_tokens(
+            self.do("3 * (-a + 2)"),
+            ["NUM_CONST", "MUL", "LPAREN", "UMINUS",
+             "SYMBOL", "PLUS", "NUM_CONST", "RPAREN"])
+
     def test_parser_state_binops(self):
         assert self.has_tokens(
             self.do("3 + b"),
