@@ -33,7 +33,7 @@ tokens = [
     "NEWLINE", "SEMICOLON",
     "PERCENT",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
-    "MUL", "POW", "PLUS", "UPLUS", "MINUS", "UMINUS",
+    "MUL", "POW", "PLUS", "UPLUS", "MINUS", "UMINUS", "COLON",
     "UQUESTION", "QUESTION",
     "NOT",
 ]
@@ -183,6 +183,15 @@ class Lexer(object):
                     yield token
             elif ch == "}":
                 for token in self.right_brace(ch):
+                    yield token
+            elif ch == "[":
+                for token in self.left_square(ch):
+                    yield token
+            elif ch == "]":
+                for token in self.right_square(ch):
+                    yield token
+            elif ch == ":":
+                for token in self.colon(ch):
                     yield token
             else:
                 for token in self.symbol(ch):
@@ -434,3 +443,29 @@ class Lexer(object):
         self.add(ch)
         self.state = self.EXPR_ARG
         yield self.emit("RBRACE")
+
+    def left_square(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        self.state = self.EXPR_BEG
+        yield self.emit("LSQUARE")
+
+    def right_square(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        self.state = self.EXPR_ARG
+        yield self.emit("RSQUARE")
+
+    def colon(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected :")
+        self.add(ch)
+        self.state = self.EXPR_BEG
+        ch2 = self.peek()
+        if ch2 == "=":
+            self.add(ch2)
+            self.read()
+            yield self.emit("COLON_ASSIGN")
+        else:
+            yield self.emit("COLON")

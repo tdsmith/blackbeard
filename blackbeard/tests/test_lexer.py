@@ -184,6 +184,22 @@ class TestLexer(object):
              "LPAREN", "SYMBOL", "RPAREN",
              "LBRACE", "SYMBOL", "PLUS", "NUM_CONST", "RBRACE"])
 
+    def test_brackets(self):
+        assert self.has_tokens(
+            self.do("foo[1]"),
+            ["SYMBOL", "LSQUARE", "NUM_CONST", "RSQUARE"])
+
+    def test_colon(self):
+        assert self.has_tokens(
+            self.do("foo[1:b]"),
+            ["SYMBOL", "LSQUARE", "NUM_CONST",
+             "COLON", "SYMBOL", "RSQUARE"])
+        assert self.has_tokens(
+            self.do("a := b"),
+            ["SYMBOL", "COLON_ASSIGN", "SYMBOL"])
+        with raises(LexerError):
+            self.do(":4")
+
     def test_parser_state_binops(self):
         assert self.has_tokens(
             self.do("3 + b"),
