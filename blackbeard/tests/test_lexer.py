@@ -172,6 +172,18 @@ class TestLexer(object):
             ["NUM_CONST", "MUL", "LPAREN", "UMINUS",
              "SYMBOL", "PLUS", "NUM_CONST", "RPAREN"])
 
+    def test_braces(self):
+        assert self.has_tokens(
+            self.do("{foo }"),
+            ["LBRACE", "SYMBOL", "RBRACE"])
+
+    def test_function(self):
+        assert self.has_tokens(
+            self.do("foo = function(bar) { bar + 2 }"),
+            ["SYMBOL", "EQ_ASSIGN", "FUNCTION",
+             "LPAREN", "SYMBOL", "RPAREN",
+             "LBRACE", "SYMBOL", "PLUS", "NUM_CONST", "RBRACE"])
+
     def test_parser_state_binops(self):
         assert self.has_tokens(
             self.do("3 + b"),

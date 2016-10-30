@@ -38,6 +38,11 @@ tokens = [
     "NOT",
 ]
 
+reserved = [
+    "FUNCTION", "FOR", "IN", "IF", "ELSE", "WHILE", "NEXT",
+    "BREAK", "REPEAT",
+]
+
 
 class Lexer(object):
     EOF = chr(0)
@@ -173,6 +178,12 @@ class Lexer(object):
             elif ch == ")":
                 for token in self.right_paren(ch):
                     yield token
+            elif ch == "{":
+                for token in self.left_brace(ch):
+                    yield token
+            elif ch == "}":
+                for token in self.right_brace(ch):
+                    yield token
             else:
                 for token in self.symbol(ch):
                     yield token
@@ -187,6 +198,14 @@ class Lexer(object):
                 yield self.emit("COMMENT")
                 break
 
+    def emit_symbol(self):
+        # type: (unicode) -> Token
+        value = "".join(self.current_value)
+        if value.upper() in reserved:
+            return self.emit(value.upper())
+        else:
+            return self.emit("SYMBOL")
+
     def symbol(self, ch):
         # type: (unicode) -> Iterator[Token]
         if (ch.isalpha() or ord(ch) > 127):
@@ -196,7 +215,7 @@ class Lexer(object):
         while True:
             ch = self.read()
             if ch == self.EOF:
-                yield self.emit("SYMBOL")
+                yield self.emit_symbol()
                 self.unread()
                 break
             elif (ch.isalnum() or
@@ -205,7 +224,7 @@ class Lexer(object):
                 self.add(ch)
             else:
                 self.unread()
-                yield self.emit("SYMBOL")
+                yield self.emit_symbol()
                 self.state = self.EXPR_ARG
                 break
 
@@ -403,3 +422,15 @@ class Lexer(object):
         self.add(ch)
         self.state = self.EXPR_ARG
         yield self.emit("RPAREN")
+
+    def left_brace(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        self.state = self.EXPR_BEG
+        yield self.emit("LBRACE")
+
+    def right_brace(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        self.state = self.EXPR_ARG
+        yield self.emit("RBRACE")
