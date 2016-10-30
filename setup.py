@@ -22,4 +22,8 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     install_requires=['rpython', 'rply', 'typing'],
+    entry_points={'console_scripts': [
+        'bblex=blackbeard.lexer:main',
+        'bbparse=blackbeard.parser:main',
+    ]}
 )
