@@ -275,8 +275,6 @@ class Lexer(object):
             ch = self.read()
             if ch == self.EOF:
                 self.error("EOF in string literal")
-                self.unread()
-                break
             elif ch == ch_begin:
                 yield self.emit("STR_CONST")
                 break
