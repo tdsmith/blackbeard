@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from pprint import pprint
-import pytest
+import pytest  # noqa:F401
 from textwrap import dedent
 
 from blackbeard.lexer import Lexer
@@ -26,7 +26,6 @@ class TestParser(object):
             """)
         self.do(source)
 
-    @pytest.mark.xfail  # FIXME
     def test_parses_block(self):
         source = dedent(
             """\

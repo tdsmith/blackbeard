@@ -49,22 +49,25 @@ class Parser(object):
         ]
     )
 
+    @pg.production("exprlist : ")
+    def exprlist_none(self, p):
+        # type: (List[Token]) -> ast.Block
+        return ast.Block([])
+
+    @pg.production("exprlist : exprlist terms")
+    def exprlist_terminate(self, p):
+        # type: (List[Union[ast.ASTNode, Token]]) -> ast.Block
+        return p[0]
+
     @pg.production("exprlist : expr_or_assign")
     def exprlist_from_expr(self, p):
         # type: (List[ast.ASTNode]) -> ast.Block
         return ast.Block.from_statement(p[0])
 
-    @pg.production("exprlist : exprlist SEMICOLON expr_or_assign")
-    @pg.production("exprlist : exprlist NEWLINE expr_or_assign")
+    @pg.production("exprlist : exprlist terms expr_or_assign")
     def exprlist_extend(self, p):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.Block
         return p[0].append(p[2])
-
-    @pg.production("exprlist : exprlist SEMICOLON")
-    @pg.production("exprlist : exprlist NEWLINE")
-    def exprlist_terminate(self, p):
-        # type: (List[Union[ast.ASTNode, Token]]) -> ast.Block
-        return p[0]
 
     @pg.production("expr_or_assign : expr")
     def expr_or_assign_from_expr(self, p):
@@ -101,12 +104,6 @@ class Parser(object):
         # type: (List[Token]) -> ast.Symbol
         return ast.Symbol(p[0].getstr())
 
-    @pg.production("expr : NEWLINE")
-    @pg.production("expr : SEMICOLON")
-    def empty_expr(self, p):
-        # type: (List[Token]) -> None
-        return None
-
     @pg.production("expr : expr PLUS expr")
     @pg.production("expr : expr MINUS expr")
     @pg.production("expr : expr MUL expr")
@@ -139,15 +136,54 @@ class Parser(object):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.ASTNode
         return p[1]
 
+    @pg.production("term : SEMICOLON")
+    @pg.production("term : NEWLINE")
+    def term(self, p):
+        # type: (List[Token]) -> ast.Token
+        return p[0]
+
+    @pg.production("terms : term")
+    def terms(self, p):
+        # type: (List[Token]) -> ast.Token
+        return p[0]
+
+    @pg.production("terms : terms SEMICOLON")
+    def terms_ext(self, p):
+        # type: (List[Token]) -> ast.Token
+        return p[0]
+
+    @pg.production("opt_term : terms")
+    def opt_term(self, p):
+        # type: (List[Token]) -> ast.Token
+        return p[0]
+
+    @pg.production("opt_term : ")
+    def opt_term_null(self, p):
+        # type: (List[Token]) -> ast.Token
+        return None
+
+    @pg.production("opt_nl : ")
+    def opt_nl_none(self, p):
+        # type: (List[Token]) -> None
+        return None
+
+    @pg.production("opt_nl : NEWLINE")
+    def opt_nl(self, p):
+        # type: (List[Token]) -> None
+        return None
+
     parser = pg.build()
 
 
 def main():
     # type: () -> None
     "NOT_RPYTHON"
+    import pdb
     import pprint
     import sys
     buf = open(sys.argv[1]).read().decode("utf-8")
     lexer = Lexer(buf, 1, {})
     parser = Parser(lexer)
+    if "--pdb" in sys.argv:
+        pdb.set_trace()
     pprint.pprint(parser.parse())
