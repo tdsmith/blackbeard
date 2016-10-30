@@ -1,10 +1,13 @@
 from __future__ import unicode_literals
 
 from rply.token import BaseBox, Token  # noqa:F401
+from typing import Any  # noqa:F401
 
 
 class ASTNode(BaseBox):
-    pass
+    def as_dict(self):
+        # type: () -> Dict[unicode, Any]
+        raise NotImplementedError
 
 
 class Block(ASTNode):
@@ -28,9 +31,9 @@ class Block(ASTNode):
         self.statements.append(statement)
         return self
 
-    def __repr__(self):
-        # type: () -> bytes
-        return ("ast.Block(%s)" % repr(self.statements)).encode("utf-8")
+    def as_dict(self):
+        # type: () -> Dict[unicode, Any]
+        return {"Block": [s.as_dict() for s in self.statements]}
 
 
 class Vector(ASTNode):
@@ -44,9 +47,12 @@ class Vector(ASTNode):
         self.values = values
         self.type = type
 
-    def __repr__(self):
-        # type: () -> bytes
-        return ("ast.Vector(%s)" % repr(self.values)).encode("utf-8")
+    def as_dict(self):
+        # type: () -> Dict[unicode, Any]
+        return {"Vector": {
+            "type": self.type,
+            "values": str(self.values)
+        }}
 
 
 class Na(ASTNode):
@@ -58,9 +64,9 @@ class Symbol(ASTNode):
         # type: (unicode) -> None
         self.name = name
 
-    def __repr__(self):
-        # type: () -> bytes
-        return ("ast.Symbol(%s)" % self.name).encode("utf-8")
+    def as_dict(self):
+        # type: () -> Dict[unicode, Any]
+        return {"Symbol": self.name}
 
 
 class BinaryOperation(ASTNode):
@@ -70,11 +76,13 @@ class BinaryOperation(ASTNode):
         self.left = left
         self.right = right
 
-    def __repr__(self):
-        # type: () -> bytes
-        return (
-            "ast.BinaryOperation(%s, %s, %s)" %
-            (self.operator, repr(self.left), repr(self.right))).encode("utf-8")
+    def as_dict(self):
+        # type: () -> Dict[unicode, Any]
+        return {"BinaryOperation": {
+            "operator": self.operator,
+            "left": self.left.as_dict(),
+            "right": self.right.as_dict(),
+        }}
 
 
 class Assign(ASTNode):
@@ -83,7 +91,9 @@ class Assign(ASTNode):
         self.target = target
         self.value = value
 
-    def __repr__(self):
-        # type: () -> bytes
-        return ((b"ast.Assign(target=%s, value=%s)" % (self.target, self.value))
-                .encode("utf-8"))
+    def as_dict(self):
+        # type: () -> Dict[unicode, Any]
+        return {"Assign": {
+            "target": self.target.as_dict(),
+            "value": self.value.as_dict(),
+        }}

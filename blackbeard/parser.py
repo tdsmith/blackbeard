@@ -186,4 +186,4 @@ def main():
     parser = Parser(lexer)
     if "--pdb" in sys.argv:
         pdb.set_trace()
-    pprint.pprint(parser.parse())
+    pprint.pprint(parser.parse().as_dict())
