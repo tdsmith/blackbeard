@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from rpython.rlib.runicode import unicode_encode_utf_8  # noqa
+# from rpython.rlib.runicode import unicode_encode_utf_8  # noqa
 
 from rply import Token
 from rply.token import SourcePosition
@@ -33,8 +33,8 @@ tokens = [
     "NEWLINE", "SEMICOLON",
     "PERCENT",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
-    "MUL", "POW",
-    "NOT"
+    "MUL", "POW", "PLUS", "MINUS",
+    "NOT",
 ]
 
 
@@ -141,6 +141,15 @@ class Lexer(object):
             elif ch == ">":
                 for token in self.greater_than(ch):
                     yield token
+            elif ch in ("'", '"'):
+                for token in self.string_quote(ch):
+                    yield token
+            elif ch == "+":
+                for token in self.plus(ch):
+                    yield token
+            elif ch == "-":
+                for token in self.minus(ch):
+                    yield token
             else:
                 for token in self.symbol(ch):
                     yield token
@@ -219,4 +228,46 @@ class Lexer(object):
 
     def greater_than(self, ch):
         # type: (unicode) -> Iterator[Token]
-        pass
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == "=":
+            self.add(ch2)
+            yield self.emit("GE")
+        else:
+            self.unread()
+            yield self.emit("GT")
+
+    def string_quote(self, ch_begin):
+        # type: (unicode) -> Iterator[Token]
+        while True:
+            ch = self.read()
+            if ch == self.EOF:
+                self.error("EOF in string literal")
+                self.unread()
+                break
+            elif ch == ch_begin:
+                yield self.emit("STR_CONST")
+                break
+            elif ch == "\\":
+                ch2 = self.peek()
+                if ch2 == ch_begin:
+                    ch = self.read()
+                self.add(ch)
+            else:
+                self.add(ch)
+
+    def plus(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        yield self.emit("PLUS")
+
+    def minus(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.add(ch)
+        ch2 = self.read()
+        if ch2 == ">":
+            self.add(ch2)
+            yield self.emit("RIGHT_ASSIGN")
+        else:
+            self.unread()
+            yield self.emit("MINUS")
