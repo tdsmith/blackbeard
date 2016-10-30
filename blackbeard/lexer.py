@@ -33,13 +33,16 @@ tokens = [
     "NEWLINE", "SEMICOLON",
     "PERCENT",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
-    "MUL", "POW", "PLUS", "MINUS",
+    "MUL", "POW", "PLUS", "UPLUS", "MINUS", "UMINUS",
     "NOT",
 ]
 
 
 class Lexer(object):
     EOF = chr(0)
+
+    EXPR_BEG = 0
+    EXPR_ARG = 1
 
     def __init__(self, source, initial_lineno, symtable):
         # type: (unicode, int, Dict[Any, Any]) -> None
@@ -49,7 +52,7 @@ class Lexer(object):
         self.current_value = []  # type: List[unicode]
         self.idx = 0
         self.columno = 1
-        self.state = 0
+        self.state = self.EXPR_BEG
         self.paren_nest = 0
         self.left_paren_begin = 0
         self.command_start = True
@@ -123,9 +126,10 @@ class Lexer(object):
                     yield token
             elif ch in "\r\n":
                 self.newline(ch)
-                if self.state != 0:
+                if False:
                     self.add("\n")
                     yield self.emit("NEWLINE")
+                self.state = self.EXPR_BEG
             elif ch == "*":
                 for token in self.star(ch):
                     yield token
@@ -178,10 +182,13 @@ class Lexer(object):
             else:
                 self.unread()
                 yield self.emit("SYMBOL")
+                self.state = self.EXPR_ARG
                 break
 
     def star(self, ch):
         # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected *")
         self.add(ch)
         ch2 = self.read()
         if ch2 == "*":
@@ -203,6 +210,8 @@ class Lexer(object):
 
     def equal(self, ch):
         # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected =")
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -214,6 +223,8 @@ class Lexer(object):
 
     def less_than(self, ch):
         # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected <")
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -228,6 +239,8 @@ class Lexer(object):
 
     def greater_than(self, ch):
         # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected >")
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -239,6 +252,7 @@ class Lexer(object):
 
     def string_quote(self, ch_begin):
         # type: (unicode) -> Iterator[Token]
+        self.state = self.EXPR_ARG
         while True:
             ch = self.read()
             if ch == self.EOF:
@@ -259,7 +273,11 @@ class Lexer(object):
     def plus(self, ch):
         # type: (unicode) -> Iterator[Token]
         self.add(ch)
-        yield self.emit("PLUS")
+        if self.state == self.EXPR_BEG:
+            yield self.emit("UPLUS")
+        else:
+            yield self.emit("PLUS")
+            self.state = self.EXPR_BEG
 
     def minus(self, ch):
         # type: (unicode) -> Iterator[Token]
@@ -270,4 +288,8 @@ class Lexer(object):
             yield self.emit("RIGHT_ASSIGN")
         else:
             self.unread()
-            yield self.emit("MINUS")
+            if self.state == self.EXPR_BEG:
+                yield self.emit("UMINUS")
+            else:
+                yield self.emit("MINUS")
+                self.state = self.EXPR_BEG

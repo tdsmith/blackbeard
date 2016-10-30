@@ -17,13 +17,20 @@ class TestLexer(object):
             return True
         return False
 
-    def do(self, source):
+    def do(self, source, state=None):
         lexer = Lexer(source, 1, {})
-        return list(lexer.tokenize())
+        result = list(lexer.tokenize())
+        if state:
+            assert lexer.state == state
+        return result
 
     def test_comment(self):
         source = "# This is a comment."
         assert self.has_tokens(self.do(source), ["COMMENT"])
+        source = "foo + bar # This is a comment."
+        assert self.has_tokens(
+            self.do(source),
+            ["SYMBOL", "PLUS", "SYMBOL", "COMMENT"])
 
     def test_symbol(self):
         assert self.do("foo") == [Token("SYMBOL", "foo")]
@@ -39,6 +46,10 @@ class TestLexer(object):
         assert self.has_tokens(
             self.do("a**b"),
             ["SYMBOL", "POW", "SYMBOL"])
+        with raises(LexerError):
+            self.do("*a")
+        with raises(LexerError):
+            self.do("**a")
 
     def test_exclamation(self):
         assert self.has_tokens(
@@ -55,6 +66,8 @@ class TestLexer(object):
         assert self.has_tokens(
             self.do("a == b"),
             ["SYMBOL", "EQ", "SYMBOL"])
+        with raises(LexerError):
+            self.do("=b")
 
     def test_less_than(self):
         assert self.has_tokens(
@@ -92,6 +105,9 @@ class TestLexer(object):
         assert self.has_tokens(
             self.do("a + b"),
             ["SYMBOL", "PLUS", "SYMBOL"])
+        assert self.has_tokens(
+            self.do("+ b"),
+            ["UPLUS", "SYMBOL"])
 
     def test_minus(self):
         assert self.has_tokens(
@@ -102,4 +118,9 @@ class TestLexer(object):
             ["SYMBOL", "RIGHT_ASSIGN", "SYMBOL"])
         assert self.has_tokens(
             self.do("-b"),
-            ["MINUS", "SYMBOL"])
+            ["UMINUS", "SYMBOL"])
+
+    def test_state_reset_on_newline(self):
+        lexer = Lexer("a\n", 1, {})
+        list(lexer.tokenize())
+        assert lexer.state == lexer.EXPR_BEG
