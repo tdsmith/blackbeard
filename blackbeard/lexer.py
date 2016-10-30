@@ -132,9 +132,8 @@ class Lexer(object):
                     yield token
             elif ch in "\r\n":
                 self.newline(ch)
-                if False:
-                    self.add("\n")
-                    yield self.emit("NEWLINE")
+                self.add("\n")
+                yield self.emit("NEWLINE")
                 self.state = self.EXPR_BEG
             elif ch == "*":
                 for token in self.star(ch):
