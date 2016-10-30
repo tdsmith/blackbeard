@@ -33,8 +33,8 @@ tokens = [
     "NEWLINE", "SEMICOLON",
     "PERCENT",
     "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
-    "MUL", "POW", "PLUS", "UPLUS", "MINUS", "UMINUS", "COLON",
-    "UQUESTION", "QUESTION",
+    "MUL", "POW", "DIV", "PLUS", "UPLUS", "MINUS", "UMINUS",
+    "COLON", "UQUESTION", "QUESTION",
     "NOT",
 ]
 
@@ -193,6 +193,9 @@ class Lexer(object):
             elif ch == ":":
                 for token in self.colon(ch):
                     yield token
+            elif ch == "/":
+                for token in self.slash(ch):
+                    yield token
             else:
                 for token in self.symbol(ch):
                     yield token
@@ -241,6 +244,7 @@ class Lexer(object):
         # type: (unicode) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected *")
+        self.state = self.EXPR_BEG
         self.add(ch)
         ch2 = self.read()
         if ch2 == "*":
@@ -255,6 +259,7 @@ class Lexer(object):
         ch2 = self.read()
         if ch2 == "=":
             self.add(ch2)
+            self.state = self.EXPR_BEG
             yield self.emit("NE")
         else:
             self.unread()
@@ -264,6 +269,7 @@ class Lexer(object):
         # type: (unicode) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected =")
+        self.state = self.EXPR_BEG
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -277,6 +283,7 @@ class Lexer(object):
         # type: (unicode) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected <")
+        self.state = self.EXPR_BEG
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -293,6 +300,7 @@ class Lexer(object):
         # type: (unicode) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected >")
+        self.state = self.EXPR_BEG
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -469,3 +477,11 @@ class Lexer(object):
             yield self.emit("COLON_ASSIGN")
         else:
             yield self.emit("COLON")
+
+    def slash(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        if self.state != self.EXPR_ARG:
+            self.error("Unexpected /")
+        self.state = self.EXPR_BEG
+        self.add(ch)
+        yield self.emit("DIV")

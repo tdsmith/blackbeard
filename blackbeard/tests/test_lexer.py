@@ -200,6 +200,18 @@ class TestLexer(object):
         with raises(LexerError):
             self.do(":4")
 
+    def test_slash(self):
+        assert self.has_tokens(
+            self.do("a / b"),
+            ["SYMBOL", "DIV", "SYMBOL"])
+        assert self.has_tokens(
+            self.do("a / 3"),
+            ["SYMBOL", "DIV", "NUM_CONST"])
+        with raises(LexerError):
+            self.do("/3")
+        with raises(LexerError):
+            self.do("4 * / 5")
+
     def test_parser_state_binops(self):
         assert self.has_tokens(
             self.do("3 + b"),
