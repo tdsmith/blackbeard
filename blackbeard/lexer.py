@@ -164,6 +164,9 @@ class Lexer(object):
             elif ch == "-":
                 for token in self.minus(ch):
                     yield token
+            elif ch.isdigit():
+                for token in self.number(ch):
+                    yield token
             else:
                 for token in self.symbol(ch):
                     yield token
@@ -180,7 +183,10 @@ class Lexer(object):
 
     def symbol(self, ch):
         # type: (unicode) -> Iterator[Token]
-        self.add(ch)
+        if (ch.isalpha() or ord(ch) > 127):
+            self.add(ch)
+        else:
+            self.error("Unexpected character: %s" % ch)
         while True:
             ch = self.read()
             if ch == self.EOF:
@@ -342,3 +348,42 @@ class Lexer(object):
             else:
                 yield self.emit("MINUS")
                 self.state = self.EXPR_BEG
+
+    def number(self, ch):
+        # type: (unicode) -> Iterator[Token]
+        self.state = self.EXPR_ARG
+        self.add(ch)
+        seen_decimal = False
+        seen_exponent = False
+        while True:
+            ch = self.read()
+            if ch.isdigit():
+                self.add(ch)
+            elif ch == ".":
+                if seen_decimal:
+                    self.unread()
+                    yield self.emit("NUM_CONST")
+                    break
+                else:
+                    self.add(ch)
+                    seen_decimal = True
+            elif ch in "eE":
+                if seen_exponent:
+                    self.unread()
+                    yield self.emit("NUM_CONST")
+                    break
+                else:
+                    seen_exponent = True
+                    seen_decimal = True
+                    self.add(ch)
+                    ch2 = self.peek()
+                    if ch2 in "+-":
+                        self.add(ch2)
+                        self.read()
+            else:
+                if ch == "L":
+                    self.add(ch)
+                else:
+                    self.unread()
+                yield self.emit("NUM_CONST")
+                break
