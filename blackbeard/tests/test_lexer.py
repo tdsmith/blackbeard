@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from textwrap import dedent  # noqa
-
 from rply import Token
 from pytest import raises
 

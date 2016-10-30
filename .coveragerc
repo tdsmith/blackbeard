@@ -1,3 +1,11 @@
 [run]
 omit = blackbeard/tests/*
 source = blackbeard
+
+[report]
+exclude_lines =
+  pragma: no cover
+  def __repr__
+  def main\(
+  if __name__ == .__main__.:
+  __version__ =
