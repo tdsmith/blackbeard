@@ -1,5 +1,3 @@
-# from rpython.rlib.runicode import unicode_encode_utf_8  # noqa
-
 from rply import Token
 from rply.token import SourcePosition
 from typing import Any, Iterator  # noqa
@@ -7,7 +5,7 @@ from typing import Any, Iterator  # noqa
 
 class LexerError(Exception):
     def __init__(self, pos, msg=None):
-        # type: (int, unicode) -> None
+        # type: (int, bytes) -> None
         self.pos = pos
         self.msg = "" if msg is None else msg
 
@@ -50,29 +48,26 @@ class Lexer(object):
     EXPR_ARG = 1
 
     def __init__(self, source, initial_lineno, symtable):
-        # type: (unicode, int, Dict[Any, Any]) -> None
+        # type: (bytes, int, Dict[Any, Any]) -> None
         self.source = source
         self.lineno = initial_lineno
         self.symtable = symtable
-        self.current_value = []  # type: List[unicode]
+        self.current_value = []  # type: List[bytes]
         self.idx = 0
         self.columno = 1
         self.state = self.EXPR_BEG
         self.paren_nest = 0
         self.left_paren_begin = 0
         self.command_start = True
-        # self.condition_state = StackState()
-        # self.cmd_argument_state = StackState()
-        self.unicode_term = None
 
     def peek(self):
-        # type: () -> unicode
+        # type: () -> bytes
         ch = self.read()
         self.unread()
         return ch
 
     def add(self, ch):
-        # type: (unicode) -> None
+        # type: (bytes) -> None
         self.current_value.append(ch)
 
     def clear(self):
@@ -84,25 +79,25 @@ class Lexer(object):
         return SourcePosition(self.idx, self.lineno, self.columno)
 
     def newline(self, ch):
-        # type: (unicode) -> None
+        # type: (bytes) -> None
         if ch == "\r" and self.peek() == "\n":
             self.read()
         self.lineno += 1
         self.columno = 1
 
     def emit(self, token):
-        # type: (unicode) -> Token
+        # type: (bytes) -> Token
         assert token in tokens
         value = "".join(self.current_value)
         self.clear()
         return Token(token, value, self.current_pos())
 
     def error(self, msg=None):
-        # type: (unicode) -> None
+        # type: (bytes) -> None
         raise LexerError(self.current_pos(), msg)
 
     def read(self):
-        # type: () -> unicode
+        # type: () -> bytes
         try:
             ch = self.source[self.idx]
         except IndexError:
@@ -233,7 +228,7 @@ class Lexer(object):
                     yield token
 
     def comment(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         while True:
             self.add(ch)
             ch = self.read()
@@ -251,7 +246,7 @@ class Lexer(object):
             return self.emit("SYMBOL")
 
     def symbol(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if (ch.isalpha() or ord(ch) > 127):
             self.add(ch)
         else:
@@ -273,7 +268,7 @@ class Lexer(object):
                 break
 
     def star(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected *")
         self.state = self.EXPR_BEG
@@ -286,7 +281,7 @@ class Lexer(object):
             yield self.emit("MUL")
 
     def exclamation(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         ch2 = self.read()
         if ch2 == "=":
@@ -298,7 +293,7 @@ class Lexer(object):
             yield self.emit("NOT")
 
     def equal(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected =")
         self.state = self.EXPR_BEG
@@ -312,7 +307,7 @@ class Lexer(object):
             yield self.emit("EQ_ASSIGN")
 
     def less_than(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected <")
         self.state = self.EXPR_BEG
@@ -329,7 +324,7 @@ class Lexer(object):
             yield self.emit("LT")
 
     def greater_than(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected >")
         self.state = self.EXPR_BEG
@@ -343,7 +338,7 @@ class Lexer(object):
             yield self.emit("GT")
 
     def string_quote(self, ch_begin):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.state = self.EXPR_ARG
         while True:
             ch = self.read()
@@ -361,7 +356,7 @@ class Lexer(object):
                 self.add(ch)
 
     def question_mark(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         if self.state == self.EXPR_ARG:
             self.state = self.EXPR_BEG
@@ -370,7 +365,7 @@ class Lexer(object):
             yield self.emit("UQUESTION")
 
     def ampersand(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected &")
         self.state = self.EXPR_BEG
@@ -384,7 +379,7 @@ class Lexer(object):
             yield self.emit("AND")
 
     def pipe(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected |")
         self.state = self.EXPR_BEG
@@ -398,7 +393,7 @@ class Lexer(object):
             yield self.emit("OR")
 
     def plus(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         if self.state == self.EXPR_BEG:
             yield self.emit("UPLUS")
@@ -407,7 +402,7 @@ class Lexer(object):
             self.state = self.EXPR_BEG
 
     def minus(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         ch2 = self.read()
         if ch2 == ">":
@@ -422,7 +417,7 @@ class Lexer(object):
                 self.state = self.EXPR_BEG
 
     def number(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.state = self.EXPR_ARG
         self.add(ch)
         seen_decimal = False
@@ -461,43 +456,43 @@ class Lexer(object):
                 break
 
     def left_paren(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         self.state = self.EXPR_BEG
         yield self.emit("LPAREN")
 
     def right_paren(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         self.state = self.EXPR_ARG
         yield self.emit("RPAREN")
 
     def left_brace(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         self.state = self.EXPR_BEG
         yield self.emit("LBRACE")
 
     def right_brace(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         self.state = self.EXPR_ARG
         yield self.emit("RBRACE")
 
     def left_square(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         self.state = self.EXPR_BEG
         yield self.emit("LSQUARE")
 
     def right_square(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.add(ch)
         self.state = self.EXPR_ARG
         yield self.emit("RSQUARE")
 
     def colon(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected :")
         self.add(ch)
@@ -511,7 +506,7 @@ class Lexer(object):
             yield self.emit("COLON")
 
     def slash(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected /")
         self.state = self.EXPR_BEG
@@ -519,7 +514,7 @@ class Lexer(object):
         yield self.emit("DIV")
 
     def caret(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected ^")
         self.state = self.EXPR_BEG
@@ -527,7 +522,7 @@ class Lexer(object):
         yield self.emit("POW")
 
     def dot(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.state = self.EXPR_BEG
         ch2 = self.read()
         if ch2 != ".":
@@ -539,7 +534,7 @@ class Lexer(object):
         yield self.emit("ELLIPSIS")
 
     def percent(self, ch):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         if self.state != self.EXPR_ARG:
             self.error("Unexpected %")
         self.state = self.EXPR_BEG
@@ -559,7 +554,7 @@ class Lexer(object):
                     break
 
     def backtick(self, ch_begin):
-        # type: (unicode) -> Iterator[Token]
+        # type: (bytes) -> Iterator[Token]
         self.state = self.EXPR_ARG
         while True:
             ch = self.read()
@@ -582,7 +577,7 @@ def main():
     "NOT_RPYTHON"
     import pprint
     import sys
-    buf = open(sys.argv[1]).read().decode("utf-8")
+    buf = open(sys.argv[1]).read()
     lexer = Lexer(buf, 1, {})
     tokens = list(lexer.tokenize())
     pprint.pprint(tokens)

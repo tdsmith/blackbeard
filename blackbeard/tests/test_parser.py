@@ -43,3 +43,15 @@ class TestParser(object):
                 ast.Vector([u"String literal"], ast.Vector.CHAR)
             ])
         ])
+
+    def test_unicode_string(self):
+        source = u'"👺"'
+        assert parse(source.encode("utf-8")) == ast.Block([
+            # strip quotes in a narrow-python friendly way
+            ast.Vector([source[1:-1]], ast.Vector.CHAR)
+        ])
+
+    def test_unicode_symbol(self):
+        assert parse(u"👺 = 5".encode("utf-8")) == ast.Block([
+            ast.Assign(ast.Symbol(u"👺"), ast.Vector([5.], ast.Vector.FLOAT))
+        ])

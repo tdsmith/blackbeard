@@ -62,8 +62,8 @@ class Na(ASTNode):
 
 class Symbol(ASTNode):
     def __init__(self, name):
-        # type: (str) -> None
-        self.name = name.decode("utf-8")
+        # type: (unicode) -> None
+        self.name = name
 
     def __repr__(self):
         # type: () -> bytes

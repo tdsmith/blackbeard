@@ -109,12 +109,13 @@ class Parser(object):
     @pg.production("expr : NUM_CONST")
     def expr_num_const(self, p):
         # type: (List[Token]) -> ast.Vector
-        return ast.Vector([p[0].getstr()], ast.Vector.FLOAT)
+        # TODO: support L, I extensions
+        return ast.Vector([float(p[0].getstr())], ast.Vector.FLOAT)
 
     @pg.production("expr : STR_CONST")
     def expr_str_const(self, p):
         # type: (List[Token]) -> ast.Vector
-        return ast.Vector([p[0].getstr()], ast.Vector.CHAR)
+        return ast.Vector([p[0].getstr().decode("utf-8")], ast.Vector.CHAR)
 
     @pg.production("expr : NA")
     def expr_na(self, p):
@@ -124,7 +125,7 @@ class Parser(object):
     @pg.production("expr : SYMBOL")
     def simple_expr(self, p):
         # type: (List[Token]) -> ast.Symbol
-        return ast.Symbol(p[0].getstr())
+        return ast.Symbol(p[0].getstr().decode("utf-8"))
 
     @pg.production("expr : expr COLON expr")
     @pg.production("expr : expr PLUS expr")
@@ -214,13 +215,20 @@ class Parser(object):
     parser = pg.build()
 
 
+def parse(source):
+    # type: (bytes) -> ast.ASTNode
+    lexer = Lexer(source, 1, {})
+    parser = Parser(lexer)
+    return parser.parse()
+
+
 def main():
     # type: () -> None
     "NOT_RPYTHON"
     import pdb
     import pprint
     import sys
-    buf = open(sys.argv[1]).read().decode("utf-8")
+    buf = open(sys.argv[1]).read()
     lexer = Lexer(buf, 1, {})
     parser = Parser(lexer)
     if "--pdb" in sys.argv:
