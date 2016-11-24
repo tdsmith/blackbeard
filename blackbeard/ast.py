@@ -53,7 +53,7 @@ class Vector(ASTNode):
 
     def __repr__(self):
         # type: () -> bytes
-        return "ast.Vector(%s)" % str(self.values)
+        return "ast.Vector(%s, type=%d)" % (str(self.values), self.type)
 
 
 class Na(ASTNode):
