@@ -1,30 +1,35 @@
-from __future__ import unicode_literals
-
-from pprint import pprint
+# coding=utf-8
 import pytest  # noqa:F401
 from textwrap import dedent
 
-from blackbeard.lexer import Lexer
-from blackbeard.parser import Parser
+from blackbeard import ast
+from blackbeard.parser import parse
 
 
 class TestParser(object):
-    def do(self, source):
-        lexer = Lexer(source, 1, {})
-        pprint(list(lexer.tokenize()))
+    def test_constant(self):
+        assert parse("3") == ast.Block([
+            ast.Vector([3.], ast.Vector.FLOAT)
+        ])
 
-        lexer = Lexer(source, 1, {})
-        parser = Parser(lexer)
-        return parser.parse()
+        assert parse("3e3") == ast.Block([
+            ast.Vector([3000.], ast.Vector.FLOAT)
+        ])
 
-    def test_parses_source(self):
-        source = dedent(
-            """\
-            a = 456.7
-            b <- 5
-            6 -> c
-            """)
-        self.do(source)
+        assert parse("5e-1") == ast.Block([
+            ast.Vector([0.5], ast.Vector.FLOAT)
+        ])
+
+    def test_assignment(self):
+        assert parse("a = 123") == ast.Block([
+            ast.Assign(ast.Symbol("a"), ast.Vector([123.], ast.Vector.FLOAT))
+        ])
+        assert parse("a <- 123") == ast.Block([
+            ast.Assign(ast.Symbol("a"), ast.Vector([123.], ast.Vector.FLOAT))
+        ])
+        assert parse("123 -> a") == ast.Block([
+            ast.Assign(ast.Symbol("a"), ast.Vector([123.], ast.Vector.FLOAT))
+        ])
 
     def test_parses_block(self):
         source = dedent(
@@ -33,4 +38,8 @@ class TestParser(object):
                 "String literal"
             }
             """)
-        self.do(source)
+        assert parse(source) == ast.Block([
+            ast.Block([
+                ast.Vector([u"String literal"], ast.Vector.CHAR)
+            ])
+        ])
