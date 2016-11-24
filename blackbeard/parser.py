@@ -77,19 +77,29 @@ class Parser(object):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.Block
         return p[0].append(p[2])
 
+    @pg.production("formlist : ")
+    def formlist_none(self, p):
+        # type: (List) -> ast.FormalList
+        return ast.FormalList()
+
     @pg.production("formlist : SYMBOL")
     @pg.production("formlist : SYMBOL EQ_ASSIGN expr")
     def formlist_from_symbol(self, p):
-        # type: (List[ast.ASTNode]) -> ast.FormalList
+        # type: (List) -> ast.FormalList
         value = p[2] if len(p) > 1 else None
-        return ast.FormalList(p[0], value)
+        return ast.FormalList([
+            (ast.Symbol(p[0].getstr().decode("utf-8")), value)
+        ])
 
     @pg.production("formlist : formlist COMMA SYMBOL")
     @pg.production("formlist : formlist COMMA SYMBOL EQ_ASSIGN expr")
     def formlist_extend(self, p):
-        # type: (List[ast.ASTNode]) -> ast.FormalList
+        # type: (List) -> ast.FormalList
         value = p[4] if len(p) > 3 else None
-        return p[0].append_formal(p[2], value)
+        return p[0].append_formal(
+            ast.Symbol(p[2].getstr().decode("utf-8")),
+            value
+        )
 
     @pg.production("expr_or_assign : expr")
     def expr_or_assign_from_expr(self, p):

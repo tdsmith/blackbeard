@@ -147,10 +147,9 @@ class Assign(ASTNode):
 
 
 class FormalList(ASTNode):
-    def __init__(self, symbol, value=None):
-        # type: (Symbol, Optional[ASTNode]) -> None
-        self.entries = []  # type: List[Tuple[Symbol, Optional[ASTNode]]]
-        self.entries.append((symbol, value))
+    def __init__(self, entries=[]):
+        # type: (Symbol, List[Tuple[Symbol, Optional[ASTNode]]]) -> None
+        self.entries = entries
 
     def append_formal(self, symbol, value=None):
         # type: (Symbol, Optional[ASTNode]) -> FormalList
