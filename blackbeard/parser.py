@@ -110,17 +110,23 @@ class Parser(object):
     def expr_num_const(self, p):
         # type: (List[Token]) -> ast.Vector
         # TODO: support L, I extensions
-        return ast.Vector([float(p[0].getstr())], ast.Vector.FLOAT)
+        return ast.Vector([
+            ast.FloatValue(float(p[0].getstr()))
+        ])
 
     @pg.production("expr : STR_CONST")
     def expr_str_const(self, p):
         # type: (List[Token]) -> ast.Vector
-        return ast.Vector([p[0].getstr().decode("utf-8")], ast.Vector.CHAR)
+        return ast.Vector([
+            ast.CharValue(p[0].getstr().decode("utf-8"))
+        ])
 
     @pg.production("expr : NA")
     def expr_na(self, p):
         # type: (List[Token]) -> ast.Vector
-        return ast.Vector(["NA"], ast.Vector.BOOL)
+        return ast.Vector([
+            ast.BoolValue(False, na=True)
+        ])
 
     @pg.production("expr : SYMBOL")
     def simple_expr(self, p):

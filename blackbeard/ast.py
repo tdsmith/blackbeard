@@ -41,23 +41,75 @@ class Block(ASTNode):
 
 
 class Vector(ASTNode):
-    FLOAT = 0
-    INT = 1
-    CHAR = 2
-    BOOL = 3
-
-    def __init__(self, values, type):
-        # type: (List, int) -> None
+    def __init__(self, values):
+        # type: (List[Value]) -> None
         self.values = values
-        self.type = type
 
     def __repr__(self):
         # type: () -> bytes
-        return "ast.Vector(%s, type=%d)" % (str(self.values), self.type)
+        return "ast.Vector(%s)" % (str(self.values))
 
 
-class Na(ASTNode):
-    pass
+class Value(ASTNode):
+    def __init__(self, value, na=False):
+        # type: (Any, bool) -> None
+        raise NotImplementedError
+
+    def __repr__(self):
+        # type: () -> bytes
+        raise NotImplementedError
+
+
+class IntValue(Value):
+    def __init__(self, value, na=False):
+        # type: (int, bool) -> None
+        assert isinstance(value, int)
+        self.value = value
+        self.na = na
+
+    def __repr__(self):
+        # type: () -> bytes
+        nastring = ", na=True" if self.na else ""
+        return "ast.%s(%s%s)" % (self.__class__.__name__, str(self.value), nastring)
+
+
+class CharValue(Value):
+    def __init__(self, value, na=False):
+        # type: (unicode, bool) -> None
+        assert isinstance(value, unicode)
+        self.value = value
+        self.na = na
+
+    def __repr__(self):
+        # type: () -> bytes
+        nastring = ", na=True" if self.na else ""
+        return "ast.%s(%s%s)" % (self.__class__.__name__, str(self.value), nastring)
+
+
+class FloatValue(Value):
+    def __init__(self, value, na=False):
+        # type: (float, bool) -> None
+        assert isinstance(value, float)
+        self.value = value
+        self.na = na
+
+    def __repr__(self):
+        # type: () -> bytes
+        nastring = ", na=True" if self.na else ""
+        return "ast.%s(%s%s)" % (self.__class__.__name__, str(self.value), nastring)
+
+
+class BoolValue(Value):
+    def __init__(self, value, na=False):
+        # type: (bool, bool) -> None
+        assert isinstance(value, bool)
+        self.value = value
+        self.na = na
+
+    def __repr__(self):
+        # type: () -> bytes
+        nastring = ", na=True" if self.na else ""
+        return "ast.%s(%s%s)" % (self.__class__.__name__, str(self.value), nastring)
 
 
 class Symbol(ASTNode):
