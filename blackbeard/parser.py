@@ -155,7 +155,10 @@ class Parser(object):
     @pg.production("expr : expr OR2 expr")
     def expr_binary_op(self, p):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.BinaryOperation
-        return ast.BinaryOperation(p[1], p[0], p[2])
+        return ast.BinaryOperation(
+            p[1].getstr(),
+            p[0],
+            p[2])
 
     @pg.production("expr : expr LEFT_ASSIGN expr")
     def expr_left_assign(self, p):

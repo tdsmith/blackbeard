@@ -125,7 +125,7 @@ class Symbol(ASTNode):
 class BinaryOperation(ASTNode):
     def __init__(self, operator, left, right):
         # type: (Token, ASTNode, ASTNode) -> None
-        self.operator = operator.gettokentype()
+        self.operator = operator
         self.left = left
         self.right = right
 
