@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 # from rpython.rlib.runicode import unicode_encode_utf_8  # noqa
 
 from rply import Token
@@ -12,6 +10,7 @@ class LexerError(Exception):
         # type: (int, unicode) -> None
         self.pos = pos
         self.msg = "" if msg is None else msg
+
 
 tokens = [
     "END_OF_INPUT", "ERROR",
@@ -587,6 +586,7 @@ def main():
     lexer = Lexer(buf, 1, {})
     tokens = list(lexer.tokenize())
     pprint.pprint(tokens)
+
 
 if __name__ == "__main__":
     main()
