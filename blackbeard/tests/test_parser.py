@@ -11,13 +11,23 @@ class TestParser(object):
         assert parse("3") == ast.Block([
             ast.Vector([ast.FloatValue(3.)])
         ])
-
         assert parse("3e3") == ast.Block([
             ast.Vector([ast.FloatValue(3000.)])
         ])
-
         assert parse("5e-1") == ast.Block([
             ast.Vector([ast.FloatValue(0.5)])
+        ])
+        assert parse("NA") == ast.Block([
+            ast.Vector([ast.BoolValue(False, na=True)])
+        ])
+
+    def test_simple_exprs(self):
+        assert parse("(3)") == ast.Block([
+            ast.Vector([ast.FloatValue(3.)])
+        ])
+        assert parse("3;;\n3") == ast.Block([
+            ast.Vector([ast.FloatValue(3.)]),
+            ast.Vector([ast.FloatValue(3.)])
         ])
 
     def test_assignment(self):
@@ -29,6 +39,42 @@ class TestParser(object):
         ])
         assert parse("123 -> a") == ast.Block([
             ast.Assign(ast.Symbol("a"), ast.Vector([ast.FloatValue(123.)]))
+        ])
+
+    def test_binary_operation(self):
+        assert parse("a + b") == ast.Block([
+            ast.BinaryOperation("+", ast.Symbol("a"), ast.Symbol("b"))
+        ])
+
+    def test_funcdef(self):
+        assert parse("function() x") == ast.Block([
+            ast.Function(formals=ast.FormalList(), body=ast.Symbol("x"))
+        ])
+        assert parse("function(x) x") == ast.Block([
+            ast.Function(
+                formals=ast.FormalList([
+                    (ast.Symbol("x"), None)
+                ]),
+                body=ast.Symbol("x"))
+        ])
+        assert parse("function(x) { x + 3 }") == ast.Block([
+            ast.Function(
+                formals=ast.FormalList([
+                    (ast.Symbol("x"), None)
+                ]),
+                body=ast.Block([
+                    ast.BinaryOperation("+", ast.Symbol("x"), ast.Vector([ast.FloatValue(3.)]))
+                ]))
+        ])
+        assert parse("function(x, y=0) { x + y }") == ast.Block([
+            ast.Function(
+                formals=ast.FormalList([
+                    (ast.Symbol("x"), None),
+                    (ast.Symbol("y"), ast.Vector([ast.FloatValue(0.)]))
+                ]),
+                body=ast.Block([
+                    ast.BinaryOperation("+", ast.Symbol("x"), ast.Symbol("y"))
+                ]))
         ])
 
     def test_parses_block(self):
