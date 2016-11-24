@@ -3,6 +3,12 @@ from typing import Any, Optional, Tuple  # noqa:F401
 
 
 class ASTNode(BaseBox):
+    def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, ASTNode):
+            return NotImplemented
+        return type(self) is type(other) and self.__dict__ == other.__dict__
+
     def __repr__(self):
         # type: () -> bytes
         raise NotImplementedError
