@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from rply import ParserGenerator, Token  # noqa:F401
 from typing import Iterator, Union  # noqa:F401
 
@@ -30,18 +28,28 @@ class Parser(object):
         l = LexerWrapper(self.lexer.tokenize())
         return self.parser.parse(l, state=self)
 
+    # R grammar:
+    # https://github.com/wch/r-source/blob/af7f52f70101960861e5d995d3a4bec010bc89e6/src/main/gram.y
+
     pg = ParserGenerator(
         ["LEFT_ASSIGN", "EQ_ASSIGN", "RIGHT_ASSIGN", "NEWLINE", "SEMICOLON",
          "MUL", "POW", "DIV", "MOD", "PLUS", "UPLUS", "MINUS", "UMINUS",
+         "GT", "GE", "LT", "LE", "EQ", "NE", "AND", "OR", "AND2", "OR2",
          "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
-         "STR_CONST", "NUM_CONST", "SYMBOL", "NA", "QUESTION", "COLON"],
+         "STR_CONST", "NUM_CONST", "SYMBOL", "NA", "QUESTION", "COLON",
+         "SPECIAL", "TILDE"],
         precedence=[
             ("left", ["QUESTION"]),
             ("right", ["LEFT_ASSIGN"]),
             ("right", ["EQ_ASSIGN"]),
             ("left", ["RIGHT_ASSIGN"]),
+            ("left", ["TILDE"]),
+            ("left", ["OR", "OR2"]),
+            ("left", ["AND", "AND2"]),
+            ("nonassoc", ["GT", "GE", "LT", "LE", "EQ", "NE"]),
             ("left", ["PLUS", "MINUS"]),
             ("left", ["MUL", "DIV", "MOD"]),
+            ("left", ["SPECIAL"]),
             ("left", ["COLON"]),
             ("left", ["UPLUS", "UMINUS"]),
             ("right", ["POW"]),
@@ -97,21 +105,33 @@ class Parser(object):
     @pg.production("expr : NA")
     def expr_na(self, p):
         # type: (List[Token]) -> ast.Vector
-        return ast.Vector([ast.Na()], ast.Vector.BOOL)
+        return ast.Vector(["NA"], ast.Vector.BOOL)
 
     @pg.production("expr : SYMBOL")
     def simple_expr(self, p):
         # type: (List[Token]) -> ast.Symbol
         return ast.Symbol(p[0].getstr())
 
+    @pg.production("expr : expr COLON expr")
     @pg.production("expr : expr PLUS expr")
     @pg.production("expr : expr MINUS expr")
     @pg.production("expr : expr MUL expr")
     @pg.production("expr : expr DIV expr")
     @pg.production("expr : expr POW expr")
-    @pg.production("expr : expr COLON expr")
+    @pg.production("expr : expr SPECIAL expr")
     @pg.production("expr : expr MOD expr")
+    @pg.production("expr : expr TILDE expr")
     @pg.production("expr : expr QUESTION expr")
+    @pg.production("expr : expr LT expr")
+    @pg.production("expr : expr LE expr")
+    @pg.production("expr : expr EQ expr")
+    @pg.production("expr : expr NE expr")
+    @pg.production("expr : expr GE expr")
+    @pg.production("expr : expr GT expr")
+    @pg.production("expr : expr AND expr")
+    @pg.production("expr : expr OR expr")
+    @pg.production("expr : expr AND2 expr")
+    @pg.production("expr : expr OR2 expr")
     def expr_binary_op(self, p):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.BinaryOperation
         return ast.BinaryOperation(p[1], p[0], p[2])
