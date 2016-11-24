@@ -1,0 +1,31 @@
+sudo: false
+language: python
+
+branches:
+    only:
+    - master
+    - travis
+    - /^v\d.*/
+
+matrix:
+  include:
+    - python: 2.7
+      env: TOXENV=py27
+    - python: 3.5
+      env: TOXENV=mypy
+    - python: 2.7
+      env: TOXENV=flake8
+    - python: 2.7
+      env: TOXENV=translate
+    - language: generic
+      os: osx
+      osx_image: xcode8.1  # https://docs.travis-ci.com/user/osx-ci-environment/
+      env: TOXENV=py27
+
+
+install:
+- if [[ "$(uname -s)" == 'Darwin' ]]; then brew install python && brew outdated python || brew upgrade python; fi
+- python -m pip install tox
+
+script:
+- tox
