@@ -37,7 +37,7 @@ class Parser(object):
          "GT", "GE", "LT", "LE", "EQ", "NE", "AND", "OR", "AND2", "OR2",
          "LBRACE", "RBRACE", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE",
          "STR_CONST", "NUM_CONST", "SYMBOL", "NA", "QUESTION", "COLON",
-         "SPECIAL", "TILDE"],
+         "SPECIAL", "TILDE", "FUNCTION", "COMMA"],
         precedence=[
             ("left", ["QUESTION"]),
             ("right", ["LEFT_ASSIGN"]),
@@ -76,6 +76,20 @@ class Parser(object):
     def exprlist_extend(self, p):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.Block
         return p[0].append(p[2])
+
+    @pg.production("formlist : SYMBOL")
+    @pg.production("formlist : SYMBOL EQ_ASSIGN expr")
+    def formlist_from_symbol(self, p):
+        # type: (List[ast.ASTNode]) -> ast.FormalList
+        value = p[2] if len(p) > 1 else None
+        return ast.FormalList(p[0], value)
+
+    @pg.production("formlist : formlist COMMA SYMBOL")
+    @pg.production("formlist : formlist COMMA SYMBOL EQ_ASSIGN expr")
+    def formlist_extend(self, p):
+        # type: (List[ast.ASTNode]) -> ast.FormalList
+        value = p[4] if len(p) > 3 else None
+        return p[0].append_formal(p[2], value)
 
     @pg.production("expr_or_assign : expr")
     def expr_or_assign_from_expr(self, p):
@@ -145,6 +159,11 @@ class Parser(object):
     def expr_right_assign(self, p):
         # type: (List[Union[ast.ASTNode, Token]]) -> ast.Assign
         return ast.Assign(target=p[2], value=p[0])
+
+    @pg.production("expr : FUNCTION LPAREN formlist RPAREN expr_or_assign")
+    def expr_function_definition(self, p):
+        # type: (List[ast.ASTNode]) -> ast.Function
+        return ast.Function(p[2], p[4])
 
     @pg.production("expr : LBRACE exprlist RBRACE")
     def expr_from_exprlist(self, p):

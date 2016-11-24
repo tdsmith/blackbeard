@@ -1,5 +1,5 @@
 from rply.token import BaseBox, Token  # noqa:F401
-from typing import Any  # noqa:F401
+from typing import Any, Optional, Tuple  # noqa:F401
 
 
 class ASTNode(BaseBox):
@@ -86,3 +86,30 @@ class Assign(ASTNode):
     def __repr__(self):
         # type: () -> bytes
         return "ast.Assign(target=%s, value=%s)" % (self.target, self.value)
+
+
+class FormalList(ASTNode):
+    def __init__(self, symbol, value=None):
+        # type: (Symbol, Optional[ASTNode]) -> None
+        self.entries = []  # type: List[Tuple[Symbol, Optional[ASTNode]]]
+        self.entries.append((symbol, value))
+
+    def append_formal(self, symbol, value=None):
+        # type: (Symbol, Optional[ASTNode]) -> FormalList
+        self.entries.append((symbol, value))
+        return self
+
+    def __repr__(self):
+        # type: () -> bytes
+        return "ast.FormalList(%s)" % str(self.entries)
+
+
+class Function(ASTNode):
+    def __init__(self, formals, body):
+        # type: (FormalList, ASTNode) -> None
+        self.formals = formals
+        self.body = body
+
+    def __repr__(self):
+        # type: () -> bytes
+        return "ast.Function(%s, %s)" % (str(self.formals), str(self.body))
