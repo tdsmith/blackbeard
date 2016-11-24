@@ -243,7 +243,7 @@ class Lexer(object):
                 break
 
     def emit_symbol(self):
-        # type: (unicode) -> Token
+        # type: () -> Token
         value = "".join(self.current_value)
         if value.upper() in reserved:
             return self.emit(value.upper())
