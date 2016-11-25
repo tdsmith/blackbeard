@@ -15,11 +15,12 @@ setup(
     packages=['blackbeard'],
     platforms='any',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Build Tools',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Other Scripting Engines',
+        'Topic :: Scientific/Engineering :: Mathematics',
     ],
     install_requires=['rpython', 'rply', 'typing'],
     entry_points={'console_scripts': [
